@@ -5,18 +5,25 @@ GENERATED_SRC = dlldata.c foo.h foo_p.c foo_i.c foo_c.c foo_r.rgs foo.tlb foopro
 CXX = i686-w64-mingw32-g++
 CC = i686-w64-mingw32-gcc
 WINDRES = i686-w64-mingw32-windres
+DLLTOOL = i686-w64-mingw32-dlltool
 
 all: clean idl proxy
 
 idl: foo.idl
 	$(MIDL) $(MIDL_FLAGS) foo.idl
 
-proxy: idl fooproxy.rc
+proxy: idl fooproxy.rc fooproxy.def
 	$(WINDRES) fooproxy.rc -O coff -o fooproxy.res
-	$(CC) -c dlldata.c
-	$(CC) -c foo_p.c
-	$(CC) -c foo_i.c
-	$(CC) -shared dlldata.o foo_p.o foo_i.o fooproxy.res  -lrpcrt4 -static-libgcc -o fooproxy.dll
+	$(DLLTOOL) -d fooproxy.def -e fooproxy_def.o
+	$(CC) -c -DREGISTER_PROXY_DLL dlldata.c
+	$(CC) -c -DREGISTER_PROXY_DLL foo_p.c
+	$(CC) -c -DREGISTER_PROXY_DLL foo_i.c
+	$(CC) -Wl,--enable-stdcall-fixup -shared fooproxy.res fooproxy_def.o dlldata.o foo_p.o foo_i.o -lrpcrt4 -o fooproxy.dll
+
+
+server: idl server.cpp
+	$(CXX) -c --std=c++17 server.cpp
+	$(CXX) server.o -static-libgcc -static-libstdc++ -o server.exe
 
 clean:
 	rm -f $(GENERATED_SRC) *.o *.dll *.exe
