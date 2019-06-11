@@ -1,0 +1,28 @@
+import "objidl.idl";
+
+[
+    object,
+    uuid(d8f522ae-8c7f-11e9-ba38-53cfcd8e97d2)
+]
+interface IFoo : IUnknown {
+    HRESULT DoBar();
+}
+
+[
+    object,
+    uuid(1c292d0c-8c82-11e9-973f-ef8f46ed21ef)
+]
+interface IFooFactory : IUnknown {
+    HRESULT GetFoo([out, retval] IFoo **foo);
+}
+
+[
+    uuid(139bac8c-8c82-11e9-acc0-bf76445465c9),
+    version(1.0),
+    hidden
+]
+library FooLibrary{
+    importlib ("stdole2.tlb");
+    interface IFoo;
+    interface IFooFactory;
+}

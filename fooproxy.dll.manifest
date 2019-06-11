@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+  <assemblyIdentity type="win32" name="fooproxy" version="1.0.0.0" />
+  <file name="fooproxy.dll">
+    <comInterfaceProxyStub
+        iid="{1C292D0C-8C82-11E9-973F-EF8F46ED21EF}"
+        proxyStubClsid32="{1C292D0C-8C82-11E9-973F-EF8F46ED21EF}"
+        name="IFooFactory"
+        tlbid="{139BAC8C-8C82-11E9-ACC0-BF76445465C9}"
+    />
+  </file>
+</assembly>
