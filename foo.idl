@@ -6,7 +6,7 @@ import "objidl.idl";
 ]
 interface IFoo : IUnknown {
     HRESULT DoBar();
-}
+};
 
 [
     object,
@@ -14,7 +14,7 @@ interface IFoo : IUnknown {
 ]
 interface IFooFactory : IUnknown {
     HRESULT GetFoo([out, retval] IFoo **foo);
-}
+};
 
 [
     uuid(139bac8c-8c82-11e9-acc0-bf76445465c9),
@@ -25,4 +25,9 @@ library FooLibrary{
     importlib ("stdole2.tlb");
     interface IFoo;
     interface IFooFactory;
-}
+    [uuid(0f2cf700-8d4a-11e9-8b88-370399e6fbe7)]
+    coclass FooFactoryImpl
+    {
+        [default] interface IFooFactory;
+    };
+};
