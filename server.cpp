@@ -21,6 +21,7 @@ class FooImpl : public IFoo
 public:
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override
     {
+        FTRACE(g_logger);
         if (ppvObject == nullptr)
         {
             return E_INVALIDARG;
@@ -44,11 +45,13 @@ public:
 
     ULONG STDMETHODCALLTYPE AddRef() override
     {
+        FTRACE(g_logger);
         return ++_refcount;
     }
 
     ULONG STDMETHODCALLTYPE Release() override
     {
+        FTRACE(g_logger);
         auto retval = --_refcount;
         if (retval == 0)
         {
@@ -59,7 +62,7 @@ public:
 
     HRESULT STDMETHODCALLTYPE DoBar()
     {
-
+        FTRACE(g_logger);
         return E_NOTIMPL;
     }
 private:
@@ -71,6 +74,7 @@ class FooFactoryImpl : public IFooFactory
 public:
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override
     {
+        FTRACE(g_logger);
         if (ppvObject == nullptr)
         {
             return E_INVALIDARG;
@@ -94,11 +98,13 @@ public:
 
     ULONG STDMETHODCALLTYPE AddRef() override
     {
+        FTRACE(g_logger);
         return ++_refcount;
     }
 
     ULONG STDMETHODCALLTYPE Release() override
     {
+        FTRACE(g_logger);
         auto retval = --_refcount;
         if (retval == 0)
         {
@@ -109,6 +115,7 @@ public:
 
     HRESULT STDMETHODCALLTYPE GetFoo(IFoo** ppFoo) override
     {
+        FTRACE(g_logger);
         return E_NOTIMPL;
     }
 
@@ -118,9 +125,8 @@ private:
 
 int main(int argc, char** argv)
 {
-    g_logger = fopen("D:\\mingw_com\\log.txt", "wb");
-
-    fputs("initializing fooserver", g_logger);
+    g_logger = fopen("E:\\mingw_com\\log.txt", "wb");
+    FTRACE_MSG(g_logger, "init");
 
     vector<string_view> args;
     args.insert(args.begin(), argv, argv + argc);
@@ -141,6 +147,25 @@ int main(int argc, char** argv)
         FooFactoryImpl fooFactory;
 
         DWORD regId = 0;
-        THROW_IF_FAILED(CoRegisterClassObject(CLSID_FooFactoryImpl, (IFooFactory*)&fooFactory, CLSCTX_LOCAL_SERVER, REGCLS_MULTIPLEUSE, &regId));
+        THROW_IF_FAILED(CoRegisterClassObject(
+                            CLSID_FooFactoryImpl,
+                            (IFooFactory*)&fooFactory,
+                            CLSCTX_LOCAL_SERVER,
+                            REGCLS_MULTIPLEUSE,
+                            &regId));
+
+        MSG ms;
+        while(GetMessage(&ms, 0, 0, 0))
+        {
+            TranslateMessage(&ms);
+            DispatchMessage(&ms);
+        }
+
+        CoRevokeClassObject(regId);
+        CoUninitialize();
+    }
+    else
+    {
+        FTRACE_MSG(g_logger, "not embedding");
     }
 }

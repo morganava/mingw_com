@@ -2,7 +2,7 @@ import "objidl.idl";
 
 [
     object,
-    uuid(d8f522ae-8c7f-11e9-ba38-53cfcd8e97d2)
+    uuid(D8F522AE-8C7F-11E9-BA38-53CFCD8E97D2)
 ]
 interface IFoo : IUnknown {
     HRESULT DoBar();
@@ -10,14 +10,14 @@ interface IFoo : IUnknown {
 
 [
     object,
-    uuid(1c292d0c-8c82-11e9-973f-ef8f46ed21ef)
+    uuid(1C292D0C-8C82-11E9-973F-EF8F46ED21EF)
 ]
 interface IFooFactory : IUnknown {
     HRESULT GetFoo([out, retval] IFoo **foo);
 };
 
 [
-    uuid(139bac8c-8c82-11e9-acc0-bf76445465c9),
+    uuid(139BAC8C-8C82-11E9-ACC0-BF76445465C9),
     version(1.0),
     hidden
 ]
@@ -25,7 +25,7 @@ library FooLibrary{
     importlib ("stdole2.tlb");
     interface IFoo;
     interface IFooFactory;
-    [uuid(0f2cf700-8d4a-11e9-8b88-370399e6fbe7)]
+    [uuid(0F2CF700-8D4A-11E9-8B88-370399E6FBE7)]
     coclass FooFactoryImpl
     {
         [default] interface IFooFactory;
