@@ -7,7 +7,7 @@ CC = i686-w64-mingw32-gcc
 WINDRES = i686-w64-mingw32-windres
 DLLTOOL = i686-w64-mingw32-dlltool
 
-all: idl proxy server
+all: idl proxy server client
 
 idl: foo.idl
 	$(MIDL) $(MIDL_FLAGS) foo.idl
@@ -25,6 +25,11 @@ server: idl server.cpp
 	$(CXX) -c --std=c++17 server.cpp
 	$(CC) -c -DREGISTER_PROXY_DLL foo_i.c
 	$(CXX) foo_i.o server.o -static-libgcc -static-libstdc++ -luuid -lole32 -loleaut32 -o server.exe
+
+client: idl client.cpp
+	$(CXX) -c --std=c++17 client.cpp
+	$(CC) -c -DREGISTER_PROXY_DLL foo_i.c
+	$(CXX) foo_i.o client.o -static-libgcc -static-libstdc++ -luuid -lole32 -loleaut32 -o client.exe
 
 clean:
 	rm -f $(GENERATED_SRC) *.o *.dll *.exe
