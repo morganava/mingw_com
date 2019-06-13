@@ -7,12 +7,12 @@ CC = i686-w64-mingw32-gcc
 WINDRES = i686-w64-mingw32-windres
 DLLTOOL = i686-w64-mingw32-dlltool
 
-all: idl proxy server client
+all: idl proxy client server
 
-idl: foo.idl
+idl:
 	$(MIDL) $(MIDL_FLAGS) foo.idl
 
-proxy: fooproxy.rc fooproxy.def
+midl_proxy:
 	$(WINDRES) fooproxy.rc -O coff -o fooproxy.res
 	$(DLLTOOL) -d fooproxy.def -e fooproxy_def.o
 	$(CC) -c -DREGISTER_PROXY_DLL dlldata.c
@@ -20,21 +20,21 @@ proxy: fooproxy.rc fooproxy.def
 	$(CC) -c -DREGISTER_PROXY_DLL foo_i.c
 	$(CC) -Wl,--enable-stdcall-fixup -shared fooproxy.res fooproxy_def.o dlldata.o foo_p.o foo_i.o -static-libgcc -lrpcrt4 -o fooproxy.dll
 
-server: server.cpp
+midl_server:
 	$(CXX) -c --std=c++17 server.cpp
 	$(CC) -c -DREGISTER_PROXY_DLL foo_i.c
 	$(CXX) foo_i.o server.o -static-libgcc -static-libstdc++ -luuid -lole32 -loleaut32 -o server.exe
 
-client: client.cpp
+midl_client:
 	$(CXX) -c --std=c++17 client.cpp
 	$(CC) -c -DREGISTER_PROXY_DLL foo_i.c
 	$(CXX) foo_i.o client.o -static-libgcc -static-libstdc++ -luuid -lole32 -loleaut32 -o client.exe
 
-widl_server: idl server
+proxy: idl midl_proxy;
 
-widl_client: idl client
+server: idl midl_server;
 
-widl_proxy: idl proxy
+client: idl midl_client;
 
 clean:
 	rm -f $(GENERATED_SRC) *.o *.dll *.exe
