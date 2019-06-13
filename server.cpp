@@ -14,14 +14,11 @@
 using namespace std;
 using namespace rap;
 
-static FILE* g_logger = nullptr;
-
 class FooImpl : public IFoo
 {
 public:
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override
     {
-        FTRACE(g_logger);
         if (ppvObject == nullptr)
         {
             return E_INVALIDARG;
@@ -46,13 +43,11 @@ public:
 
     ULONG STDMETHODCALLTYPE AddRef() override
     {
-        FTRACE(g_logger);
         return ++_refcount;
     }
 
     ULONG STDMETHODCALLTYPE Release() override
     {
-        FTRACE(g_logger);
         auto retval = --_refcount;
         if (retval == 0)
         {
@@ -63,7 +58,7 @@ public:
 
     HRESULT STDMETHODCALLTYPE DoBar()
     {
-        FTRACE(g_logger);
+        TRACE();
         return S_OK;
     }
 private:
@@ -75,12 +70,6 @@ class FooFactoryImpl : public IClassFactory
 public:
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override
     {
-        FTRACE(g_logger);
-        OLECHAR* guidString = nullptr;
-        StringFromCLSID(riid, &guidString);
-        FTRACE_MSG(g_logger, "guid : %S", guidString);
-        CoTaskMemFree(guidString);
-
         if (ppvObject == nullptr)
         {
             return E_INVALIDARG;
@@ -105,13 +94,11 @@ public:
 
     ULONG STDMETHODCALLTYPE AddRef() override
     {
-        FTRACE(g_logger);
         return ++_refcount;
     }
 
     ULONG STDMETHODCALLTYPE Release() override
     {
-        FTRACE(g_logger);
         auto retval = --_refcount;
         if (retval == 0)
         {
@@ -122,15 +109,14 @@ public:
 
     HRESULT STDMETHODCALLTYPE LockServer(BOOL lock) override
     {
-        if (lock) FTRACE_MSG(g_logger, "LOCK");
-        else FTRACE_MSG(g_logger, "UNLOCK");
+        if (lock) TRACE_MSG("LOCK");
+        else TRACE_MSG("UNLOCK");
 
         return S_OK;
     }
 
     HRESULT STDMETHODCALLTYPE CreateInstance(IUnknown *pUnkOuter, REFIID riid, void** ppv) override
     {
-        FTRACE(g_logger);
         if (pUnkOuter != nullptr) return CLASS_E_NOAGGREGATION;
 
         if (riid == IID_IFoo)
@@ -152,8 +138,7 @@ private:
 
 int main(int argc, char** argv)
 {
-    g_logger = fopen("E:\\mingw_com\\log.txt", "wb");
-    FTRACE_MSG(g_logger, "init");
+    TRACE_MSG("init");
 
     vector<string_view> args;
     args.insert(args.begin(), argv, argv + argc);
@@ -171,7 +156,7 @@ int main(int argc, char** argv)
 
         com_ptr<ITypeLib> typelib;
         THROW_IF_FAILED(LoadTypeLibEx(L"fooproxy.dll", REGKIND_REGISTER, &typelib));
-        fprintf(g_logger, "registered typelib\n");
+        TRACE_MSG("registered typelib");
 
         com_ptr<IClassFactory> fooFactory(new FooFactoryImpl());
 
@@ -187,7 +172,6 @@ int main(int argc, char** argv)
         MSG ms;
         while(GetMessage(&ms, 0, 0, 0))
         {
-            FTRACE_MSG(g_logger, "------");
             TranslateMessage(&ms);
             DispatchMessage(&ms);
         }
@@ -197,6 +181,6 @@ int main(int argc, char** argv)
     }
     else
     {
-        FTRACE_MSG(g_logger, "not embedding");
+        TRACE_MSG("not embedding");
     }
 }
