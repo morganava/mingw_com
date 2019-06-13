@@ -30,7 +30,16 @@ int main(int argc, char** argv)
 
             com_ptr<IFoo> foo;
             THROW_IF_FAILED(fooFactory->CreateInstance(nullptr, IID_IFoo, (void**)&foo));
-            THROW_IF_FAILED(foo->DoBar());
+            LONG barCount = 0;
+            THROW_IF_FAILED(foo->getBarCount(&barCount));
+            TRACE_MSG("bar count : %d", barCount);
+            for(LONG idx = 0; idx < barCount; ++idx)
+            {
+                com_ptr<IBar> bar;
+                THROW_IF_FAILED(foo->getBarAt(idx, &bar));
+                THROW_IF_FAILED(bar->PrintMsg());
+
+            }
         }
         CoUninitialize();
     }

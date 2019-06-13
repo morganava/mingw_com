@@ -6,6 +6,7 @@
 #include <vector>
 #include <string_view>
 #include <atomic>
+#include <memory>
 
 // local
 #include "com_ptr.hpp"
@@ -14,131 +15,203 @@
 using namespace std;
 using namespace rap;
 
-class FooImpl : public IFoo
+namespace rap
 {
-public:
-    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override
-    {
-        if (ppvObject == nullptr)
-        {
-            return E_INVALIDARG;
-        }
+    MAKE_IID(IUnknown);
+    MAKE_IID(IClassFactory);
+    MAKE_IID(IBar);
+    MAKE_IID(IFoo);
 
-        if (riid == IID_IUnknown)
+    template<typename BASE, typename INT0, typename... INTN>
+    HRESULT IUnknownComponent_QueryInterfaceImpl(BASE* self, REFIID riid, void** ppvObject)
+    {
+        if (riid == iid<INT0>::value)
         {
-            *ppvObject = static_cast<IUnknown*>(this);
-        }
-        else if(riid == IID_IFoo)
-        {
-            *ppvObject = static_cast<IFoo*>(this);
+            *ppvObject = static_cast<INT0*>(self);
         }
         else
         {
-            *ppvObject = nullptr;
-            return E_NOINTERFACE;
+            return IUnknownComponent_QueryInterfaceImpl<BASE, INTN...>(self, riid, ppvObject);
         }
-        this->AddRef();
+        self->AddRef();
         return S_OK;
     }
 
-    ULONG STDMETHODCALLTYPE AddRef() override
+    template<typename BASE>
+    HRESULT IUnknownComponent_QueryInterfaceImpl(BASE* self, REFIID riid, void** ppvObject)
     {
-        return ++_refcount;
+        return E_NOINTERFACE;
     }
 
-    ULONG STDMETHODCALLTYPE Release() override
+    template<typename BASE, typename... INTERFACES>
+    class IUnknownComponent
     {
-        auto retval = --_refcount;
-        if (retval == 0)
+    public:
+        HRESULT QueryInterface(BASE* self, REFIID riid, void** ppvObject)
         {
-            delete this;
+            if (!ppvObject) return E_INVALIDARG;
+            return IUnknownComponent_QueryInterfaceImpl<BASE, INTERFACES...>(self, riid, ppvObject);
         }
-        return retval;
-    }
 
-    HRESULT STDMETHODCALLTYPE DoBar()
+        ULONG AddRef()
+        {
+            return ++_refcount;
+        }
+
+        ULONG Release(BASE* self)
+        {
+            auto retval = --_refcount;
+            if (retval == 0)
+            {
+                delete self;
+            }
+            return retval;
+        }
+    private:
+        atomic_size_t _refcount = 0;
+    };
+
+    class BarImpl : public IBar
     {
-        TRACE();
-        return S_OK;
-    }
-private:
-    atomic_size_t _refcount = 0;
-};
+    public:
+        HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override
+        {
+            return iuc.QueryInterface(this, riid, ppvObject);
+        }
 
-class FooFactoryImpl : public IClassFactory
-{
-public:
-    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override
+        ULONG STDMETHODCALLTYPE AddRef() override
+        {
+            return iuc.AddRef();
+        }
+
+        ULONG STDMETHODCALLTYPE Release() override
+        {
+            return iuc.Release(this);
+        }
+
+        HRESULT STDMETHODCALLTYPE PrintMsg() override
+        {
+            TRACE_MSG("Bar Id: %d", id);
+        }
+
+        void setId(LONG id)
+        {
+            this->id = id;
+        }
+    private:
+        IUnknownComponent<BarImpl, IUnknown, IBar> iuc;
+        LONG id = -1;
+    };
+
+    class FooImpl : public IFoo
     {
-        if (ppvObject == nullptr)
+    public:
+        HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override
         {
-            return E_INVALIDARG;
+            return iuc.QueryInterface(this, riid, ppvObject);
         }
 
-        if (riid == IID_IUnknown)
+        ULONG STDMETHODCALLTYPE AddRef() override
         {
-            *ppvObject = static_cast<IUnknown*>(this);
+            return iuc.AddRef();
         }
-        else if(riid == IID_IClassFactory)
-        {
-            *ppvObject = static_cast<IClassFactory*>(this);
-        }
-        else
-        {
-            *ppvObject = nullptr;
-            return E_NOINTERFACE;
-        }
-        this->AddRef();
-        return S_OK;
-    }
 
-    ULONG STDMETHODCALLTYPE AddRef() override
+        ULONG STDMETHODCALLTYPE Release() override
+        {
+            return iuc.Release(this);
+        }
+
+        HRESULT STDMETHODCALLTYPE getBarCount(LONG *count) override
+        {
+            TRACE();
+            if (barCount == -1)
+            {
+                barCount = rand() % 10 + 1;
+                TRACE();
+                bars.reset(new BarImpl[barCount]);
+                for(LONG idx = 0; idx < barCount; ++idx)
+                {
+                    TRACE();
+                    bars[idx].setId(idx);
+                }
+            }
+            *count = barCount;
+
+            return S_OK;
+        }
+
+        HRESULT STDMETHODCALLTYPE getBarAt(LONG idx, IBar** bar) override
+        {
+            TRACE_MSG("idx : %d", idx);
+            if (bar == nullptr || idx < 0 || idx >= barCount) {
+                TRACE();
+                return E_INVALIDARG;
+            }
+
+            TRACE();
+            *bar = bars.get() + idx;
+            return S_OK;
+        }
+
+    private:
+        IUnknownComponent<FooImpl, IUnknown, IFoo> iuc;
+        LONG barCount = -1;
+        unique_ptr<BarImpl[]> bars;
+    };
+
+    class FooFactoryImpl : public IClassFactory
     {
-        return ++_refcount;
-    }
-
-    ULONG STDMETHODCALLTYPE Release() override
-    {
-        auto retval = --_refcount;
-        if (retval == 0)
+    public:
+        HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override
         {
-            delete this;
-        }
-        return retval;
-    }
-
-    HRESULT STDMETHODCALLTYPE LockServer(BOOL lock) override
-    {
-        if (lock) TRACE_MSG("LOCK");
-        else TRACE_MSG("UNLOCK");
-
-        return S_OK;
-    }
-
-    HRESULT STDMETHODCALLTYPE CreateInstance(IUnknown *pUnkOuter, REFIID riid, void** ppv) override
-    {
-        if (pUnkOuter != nullptr) return CLASS_E_NOAGGREGATION;
-
-        if (riid == IID_IFoo)
-        {
-            com_ptr<IFoo> foo(new FooImpl());
-            *ppv = foo.release();
-        }
-        else
-        {
-            return E_NOINTERFACE;
+            return iuc.QueryInterface(this, riid, ppvObject);
         }
 
-        return S_OK;
-    }
+        ULONG STDMETHODCALLTYPE AddRef() override
+        {
+            return iuc.AddRef();
+        }
 
-private:
-    atomic_size_t _refcount = 0;
-};
+        ULONG STDMETHODCALLTYPE Release() override
+        {
+            return iuc.Release(this);
+        }
+
+        HRESULT STDMETHODCALLTYPE LockServer(BOOL lock) override
+        {
+            if (lock) TRACE_MSG("LOCK");
+            else TRACE_MSG("UNLOCK");
+
+            return S_OK;
+        }
+
+        HRESULT STDMETHODCALLTYPE CreateInstance(IUnknown *pUnkOuter, REFIID riid, void** ppv) override
+        {
+            if (pUnkOuter != nullptr) return CLASS_E_NOAGGREGATION;
+
+            if (riid == IID_IFoo)
+            {
+                com_ptr<IFoo> foo(new FooImpl());
+                *ppv = foo.release();
+            }
+            else
+            {
+                return E_NOINTERFACE;
+            }
+
+            return S_OK;
+        }
+
+    private:
+        IUnknownComponent<FooFactoryImpl, IUnknown, IClassFactory> iuc;
+    };
+}
 
 int main(int argc, char** argv)
 {
     TRACE_MSG("init");
+
+    srand(0);
 
     vector<string_view> args;
     args.insert(args.begin(), argv, argv + argc);
