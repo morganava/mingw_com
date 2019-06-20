@@ -6,6 +6,7 @@
 
 // local
 #include "com_ptr.hpp"
+#include "bstr.hpp"
 #include "foo.h"
 
 using namespace std;
@@ -37,14 +38,16 @@ int main(int argc, char** argv)
             {
                 com_ptr<IBar> bar;
                 THROW_IF_FAILED(foo->getBarAt(idx, &bar));
-                THROW_IF_FAILED(bar->PrintMsg());
-
+                bstr str;
+                THROW_IF_FAILED(bar->getString(&str));
+                TRACE_MSG("bar[%i] : %S", idx, str.get());
             }
         }
         CoUninitialize();
+        throw nullptr;
     }
     catch(...)
     {
-
+        TRACE_MSG("Make sure you've done the required server and proxy registration, see registerFoo.bat");
     }
 }

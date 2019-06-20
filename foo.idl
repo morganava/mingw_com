@@ -2,10 +2,10 @@ import "objidl.idl";
 
 [
     object,
-    uuid(56def60a-8e0a-11e9-85b7-a30030946cfd)
+    uuid(12a0f254-9396-11e9-8805-4be52278f392)
 ]
 interface IBar : IUnknown {
-    HRESULT PrintMsg();
+    HRESULT getString([out, retval] BSTR* str);
 };
 
 [
@@ -13,19 +13,9 @@ interface IBar : IUnknown {
     uuid(D8F522AE-8C7F-11E9-BA38-53CFCD8E97D2)
 ]
 interface IFoo : IUnknown {
-    HRESULT getBarCount([out, retval] LONG *count);
-    HRESULT getBarAt([in] LONG idx, [out, retval] IBar** bar);
+    HRESULT getBarCount([out, retval] LONG* barCount);
+    HRESULT getBarAt([in] LONG index, [out,retval] IBar** bar);
 };
-
-/*
-[
-    object,
-    uuid(1C292D0C-8C82-11E9-973F-EF8F46ED21EF)
-]
-interface IFooFactory : IUnknown {
-    HRESULT GetFoo([out, retval] IFoo **foo);
-};
-*/
 
 [
     uuid(139BAC8C-8C82-11E9-ACC0-BF76445465C9),
@@ -35,7 +25,6 @@ interface IFooFactory : IUnknown {
 library FooLibrary{
     importlib ("stdole2.tlb");
     interface IFoo;
-    interface IBar;
     [uuid(0F2CF700-8D4A-11E9-8B88-370399E6FBE7)]
     coclass Foo
     {

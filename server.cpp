@@ -74,6 +74,7 @@ namespace rap
     class BarImpl : public IBar
     {
     public:
+        // IUnknown
         HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override
         {
             return iuc.QueryInterface(this, riid, ppvObject);
@@ -89,11 +90,22 @@ namespace rap
             return iuc.Release(this);
         }
 
-        HRESULT STDMETHODCALLTYPE PrintMsg() override
+        // IBar
+        HRESULT STDMETHODCALLTYPE getString(BSTR* str) override
         {
-            TRACE_MSG("Bar Id: %d", id);
+            WCHAR strBuffer[64];
+            _snwprintf(strBuffer, sizeof(strBuffer), L"BarImpl #%li", id);
+
+            auto retval = ::SysAllocString(strBuffer);
+            if (retval == nullptr) {
+                return E_OUTOFMEMORY;
+            }
+            *str = retval;
+            return S_OK;
         }
 
+
+        // BarImpl
         void setId(LONG id)
         {
             this->id = id;
@@ -106,6 +118,7 @@ namespace rap
     class FooImpl : public IFoo
     {
     public:
+        // IUnknown
         HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override
         {
             return iuc.QueryInterface(this, riid, ppvObject);
@@ -121,6 +134,7 @@ namespace rap
             return iuc.Release(this);
         }
 
+        // IFoo
         HRESULT STDMETHODCALLTYPE getBarCount(LONG *count) override
         {
             TRACE();
@@ -162,6 +176,7 @@ namespace rap
     class FooFactoryImpl : public IClassFactory
     {
     public:
+        // IUnknown
         HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override
         {
             return iuc.QueryInterface(this, riid, ppvObject);
@@ -177,6 +192,7 @@ namespace rap
             return iuc.Release(this);
         }
 
+        // IClassFactory
         HRESULT STDMETHODCALLTYPE LockServer(BOOL lock) override
         {
             if (lock) TRACE_MSG("LOCK");
@@ -187,18 +203,23 @@ namespace rap
 
         HRESULT STDMETHODCALLTYPE CreateInstance(IUnknown *pUnkOuter, REFIID riid, void** ppv) override
         {
+            TRACE();
             if (pUnkOuter != nullptr) return CLASS_E_NOAGGREGATION;
 
             if (riid == IID_IFoo)
             {
+                TRACE();
                 com_ptr<IFoo> foo(new FooImpl());
+                foo->AddRef();
                 *ppv = foo.release();
             }
             else
             {
+                TRACE();
                 return E_NOINTERFACE;
             }
 
+            TRACE();
             return S_OK;
         }
 
@@ -230,7 +251,6 @@ int main(int argc, char** argv)
         com_ptr<ITypeLib> typelib;
         THROW_IF_FAILED(LoadTypeLibEx(L"fooproxy.dll", REGKIND_REGISTER, &typelib));
         TRACE_MSG("registered typelib");
-
         com_ptr<IClassFactory> fooFactory(new FooFactoryImpl());
 
         DWORD regId = 0;
