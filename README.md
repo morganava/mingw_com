@@ -4,7 +4,7 @@ This project provides a barebones out-of-proc COM server and client built with m
 
 # Building
 
-Just do **make** in the root project directory. Depends mingw the toolchain to run properly and an up-to-date widl compiler from wine. You'll need a version of wine newer than at least 4.10 (at time of this writing, the patches required for this project to work properly have not been merged, see this wine branch with the required widl fixes: https://github.com/pospeselr/wine/tree/winedev
+Just do **make** in the root project directory. Depends mingw the toolchain to run properly and an up-to-date widl compiler from wine. You'll need a version of wine newer than at least 4.10 (at time of this writing, the patches required for this project to work properly have not been merged, see this wine branch with the required widl fixes: https://github.com/pospeselr/wine/tree/winedev).  You'll also need to tweak the Makefile to have MINGW_INCLUDE_DIR point to the path containing objidl.idl and stdole2.tlb.
 
 # Usage
 
